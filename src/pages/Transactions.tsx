@@ -85,6 +85,26 @@ export default function Transactions({ expenses, categories, paymentMethods, onE
     });
   }, [expenses, search, payFilter, dateFrom, dateTo, matchesCategoryFilter]);
 
+  // Build a flat list of categories with their full paths, sorted so they read naturally
+  const categoriesWithPaths = useMemo(() => {
+    const result: { id: string; path: string; depth: number }[] = [];
+
+    const traverse = (parentId: string | null | undefined, depth: number) => {
+      const children = categories.filter(c => (c.parentId ?? null) === (parentId ?? null));
+      for (const cat of children) {
+        result.push({
+          id: cat.id,
+          path: getCategoryPath(cat.id),
+          depth,
+        });
+        traverse(cat.id, depth + 1);
+      }
+    };
+
+    traverse(null, 0);
+    return result;
+  }, [categories, categoriesById]);
+
   const fmt = (n: number) => '₹' + n.toLocaleString('en-IN');
   const hasActiveFilters = search || catFilter !== 'all' || payFilter !== 'all' || dateFrom || dateTo;
 
@@ -130,7 +150,11 @@ export default function Transactions({ expenses, categories, paymentMethods, onE
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Categories</SelectItem>
-                  {categories.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+                  {categoriesWithPaths.map(({ id, path }) => (
+                    <SelectItem key={id} value={id}>
+                      {path}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>

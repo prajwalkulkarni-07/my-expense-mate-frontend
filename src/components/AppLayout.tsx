@@ -1,7 +1,9 @@
 import { ReactNode } from 'react';
 import { useLocation, Link } from 'react-router-dom';
-import { LayoutDashboard, Receipt, TrendingUp, Settings } from 'lucide-react';
+import { LayoutDashboard, Receipt, TrendingUp, Settings, LogOut } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useAuth } from '@/hooks/use-auth-store';
+import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
 const NAV_ITEMS = [
@@ -18,6 +20,7 @@ interface AppLayoutProps {
 export function AppLayout({ children }: AppLayoutProps) {
   const isMobile = useIsMobile();
   const { pathname } = useLocation();
+  const { logout, user } = useAuth();
 
   return (
     <div className="h-screen bg-background flex overflow-hidden">
@@ -26,6 +29,11 @@ export function AppLayout({ children }: AppLayoutProps) {
         <aside className="w-64 border-r border-border bg-card flex flex-col shrink-0 sticky top-0 h-screen">
           <div className="p-6 border-b border-border">
             <h1 className="text-lg font-bold text-foreground tracking-tight">💰 Prajwal Tracker</h1>
+            {user && (
+              <p className="text-sm text-muted-foreground mt-1 truncate">
+                {user.username}
+              </p>
+            )}
           </div>
           <nav className="flex-1 p-4 space-y-1">
             {NAV_ITEMS.map(item => (
@@ -44,6 +52,16 @@ export function AppLayout({ children }: AppLayoutProps) {
               </Link>
             ))}
           </nav>
+          <div className="p-4 border-t border-border">
+            <Button
+              variant="ghost"
+              className="w-full justify-start text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+              onClick={logout}
+            >
+              <LogOut className="h-4 w-4 mr-3" />
+              Logout
+            </Button>
+          </div>
         </aside>
       )}
 
@@ -52,11 +70,30 @@ export function AppLayout({ children }: AppLayoutProps) {
         {/* Mobile Header */}
         {isMobile && (
           <header className="sticky top-0 z-40 bg-card/80 backdrop-blur-md border-b border-border px-4 py-3 flex items-center justify-between">
-            <h1 className="text-base font-bold text-foreground">💰 Prajwal Tracker</h1>
+            <div>
+              <h1 className="text-base font-bold text-foreground">💰 Prajwal Tracker</h1>
+              {user && (
+                <p className="text-xs text-muted-foreground truncate">
+                  {user.username}
+                </p>
+              )}
+            </div>
+            <Button variant="ghost" size="icon" onClick={logout}>
+              <LogOut className="h-5 w-5" />
+            </Button>
           </header>
         )}
 
-        <main className={cn('flex-1 overflow-auto', isMobile ? 'pb-24 px-4 pt-4' : 'p-6')}>
+        {/* Desktop Header */}
+        {!isMobile && (
+          <header className="border-b border-border bg-card/80 backdrop-blur-md px-6 py-4 flex items-center justify-between">
+            <h1 className="text-xl font-bold text-foreground">
+              {NAV_ITEMS.find(item => item.path === pathname)?.label || 'Dashboard'}
+            </h1>
+          </header>
+        )}
+
+        <main className={cn('flex-1 overflow-auto', isMobile ? 'pb-24 px-4 pt-4' : 'p-6 pt-0')}>
           {children}
         </main>
 

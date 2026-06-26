@@ -27,30 +27,49 @@ function CategoryTree({ categories, onRemove, level = 0, parentId = null }: {
   level?: number, 
   parentId?: string | null 
 }) {
-  const children = categories.filter(c => c.parentId === parentId);
+  const children = categories.filter(c => (c.parentId ?? null) === parentId);
   if (!children.length) return null;
 
   return (
-    <div className="space-y-2" style={{ marginLeft: level > 0 ? `${level * 16}px` : 0 }}>
+    <div className="space-y-1.5">
       {children.map(cat => (
-        <div key={cat.id} className="flex items-center justify-between bg-secondary/30 px-3 py-2 rounded-lg">
-          <span className="text-sm font-medium">{cat.name}</span>
-          <button 
-            onClick={() => onRemove(cat.id)} 
-            className="text-muted-foreground hover:text-destructive transition-colors"
+        <div key={cat.id}>
+          {/* Row for this category */}
+          <div
+            className="flex items-center justify-between rounded-lg px-3 py-2"
+            style={{
+              marginLeft: level > 0 ? `${level * 20}px` : 0,
+              backgroundColor: level === 0 ? 'hsl(var(--secondary) / 0.4)' : 'hsl(var(--secondary) / 0.2)',
+              borderLeft: level > 0 ? '2px solid hsl(var(--border))' : 'none',
+            }}
           >
-            <X className="h-4 w-4" />
-          </button>
+            <div className="flex items-center gap-2 min-w-0">
+              {level > 0 && (
+                <span className="text-muted-foreground text-xs shrink-0">↳</span>
+              )}
+              <span
+                className="text-sm font-medium truncate"
+                style={{ color: level === 0 ? 'hsl(var(--foreground))' : 'hsl(var(--muted-foreground))' }}
+              >
+                {cat.name}
+              </span>
+            </div>
+            <button
+              onClick={() => onRemove(cat.id)}
+              className="text-muted-foreground hover:text-destructive transition-colors shrink-0 ml-2"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+
+          {/* Recurse for children of this category */}
+          <CategoryTree
+            categories={categories}
+            onRemove={onRemove}
+            level={level + 1}
+            parentId={cat.id}
+          />
         </div>
-      ))}
-      {children.map(cat => (
-        <CategoryTree
-          key={`tree-${cat.id}`}
-          categories={categories}
-          onRemove={onRemove}
-          level={level + 1}
-          parentId={cat.id}
-        />
       ))}
     </div>
   );
@@ -137,7 +156,9 @@ export default function SettingsPage({
               <Plus className="h-3.5 w-3.5" /> Add
             </Button>
           </div>
-          <CategoryTree categories={categories} onRemove={onRemoveCategory} />
+
+          {/* Nested tree starting from root */}
+          <CategoryTree categories={categories} onRemove={onRemoveCategory} parentId={null} />
         </CardContent>
       </Card>
 

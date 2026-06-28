@@ -34,7 +34,6 @@ function CategoryTree({ categories, onRemove, level = 0, parentId = null }: {
     <div className="space-y-1.5">
       {children.map(cat => (
         <div key={cat.id}>
-          {/* Row for this category */}
           <div
             className="flex items-center justify-between rounded-lg px-3 py-2"
             style={{
@@ -62,7 +61,6 @@ function CategoryTree({ categories, onRemove, level = 0, parentId = null }: {
             </button>
           </div>
 
-          {/* Recurse for children of this category */}
           <CategoryTree
             categories={categories}
             onRemove={onRemove}
@@ -110,8 +108,7 @@ export default function SettingsPage({
   const rootCategories = categories.filter(c => !c.parentId);
 
   return (
-    <div className="space-y-6 max-w-2xl mx-auto">
-      <h2 className="text-2xl font-bold text-foreground">Settings</h2>
+    <div className="space-y-6 max-w-2xl mx-auto px-4 pt-6 pb-8">
 
       {/* Theme */}
       <Card className="shadow-sm">
@@ -157,7 +154,6 @@ export default function SettingsPage({
             </Button>
           </div>
 
-          {/* Nested tree starting from root */}
           <CategoryTree categories={categories} onRemove={onRemoveCategory} parentId={null} />
         </CardContent>
       </Card>

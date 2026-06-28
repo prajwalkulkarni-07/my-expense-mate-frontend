@@ -198,7 +198,6 @@ export default function Dashboard({ expenses, budgets, categories }: DashboardPr
       if (!expenseDate) {
         return;
       }
-
       const key = format(expenseDate, 'MMM yy');
       months[key] = (months[key] || 0) + e.amount;
     });
@@ -239,8 +238,7 @@ export default function Dashboard({ expenses, budgets, categories }: DashboardPr
   };
 
   return (
-    <div className="space-y-6 max-w-5xl mx-auto">
-      <h2 className="text-2xl font-bold text-foreground">Dashboard</h2>
+    <div className="space-y-6 max-w-5xl mx-auto px-4 pt-6 pb-8">
 
       {/* Summary Cards */}
       <div className="grid grid-cols-3 gap-3">

@@ -45,8 +45,7 @@ export default function Insights({ expenses }: InsightsProps) {
   ].filter(Boolean);
 
   return (
-    <div className="space-y-6 max-w-3xl mx-auto">
-      <h2 className="text-2xl font-bold text-foreground">Insights</h2>
+    <div className="space-y-6 max-w-3xl mx-auto px-4 pt-6 pb-8">
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <Card className="shadow-sm">

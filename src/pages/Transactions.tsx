@@ -8,10 +8,20 @@ import { cn } from '@/lib/utils';
 import { formatStoredDate, parseStoredDate, toStoredDate } from '@/lib/date';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { exportToCSV } from '@/lib/csv';
-import { Search, Download, Pencil, Trash2, Calendar as CalendarIcon, Plus, X } from 'lucide-react';
+import { Search, Download, Pencil, Trash2, Calendar as CalendarIcon, Plus, X, AlertTriangle } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 interface TransactionsProps {
   expenses: Expense[];
@@ -29,6 +39,7 @@ export default function Transactions({ expenses, categories, paymentMethods, onE
   const [payFilter, setPayFilter] = useState('all');
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
+  const [deleteTarget, setDeleteTarget] = useState<Expense | null>(null);
 
   const categoriesById = useMemo(
     () => new Map(categories.map(category => [category.id, category])),
@@ -85,7 +96,11 @@ export default function Transactions({ expenses, categories, paymentMethods, onE
     });
   }, [expenses, search, payFilter, dateFrom, dateTo, matchesCategoryFilter]);
 
-  // Build a flat list of categories with their full paths, sorted so they read naturally
+  const filteredTotal = useMemo(
+    () => filtered.reduce((s, e) => s + e.amount, 0),
+    [filtered]
+  );
+
   const categoriesWithPaths = useMemo(() => {
     const result: { id: string; path: string; depth: number }[] = [];
 
@@ -116,20 +131,46 @@ export default function Transactions({ expenses, categories, paymentMethods, onE
     setDateTo('');
   };
 
+  const handleDeleteClick = (e: Expense) => {
+    setDeleteTarget(e);
+  };
+
+  const handleDeleteConfirm = () => {
+    if (deleteTarget) {
+      onDelete(deleteTarget.id);
+      setDeleteTarget(null);
+    }
+  };
+
   return (
-    <div className="mx-auto max-w-5xl space-y-4 sm:space-y-5">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <h2 className="text-2xl font-bold text-foreground">Transactions</h2>
-        <div className="grid grid-cols-2 gap-2 sm:flex">
+    <div className="mx-auto max-w-5xl space-y-4 sm:space-y-5 px-4 pt-6 pb-8">
+
+      {/* Header row */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3 text-sm text-muted-foreground">
+          <span>
+            <span className="font-medium text-foreground">{filtered.length}</span>
+            {' '}transaction{filtered.length !== 1 ? 's' : ''}
+          </span>
+          <span className="text-border">·</span>
+          <span>
+            <span className="font-medium text-foreground">{fmt(filteredTotal)}</span>
+            {' '}total
+          </span>
+        </div>
+        <div className="flex items-center gap-2">
           <Button variant="outline" size="sm" onClick={() => exportToCSV(filtered)} className="gap-1.5">
-            <Download className="h-3.5 w-3.5" /> CSV
+            <Download className="h-3.5 w-3.5" />
+            <span className="hidden sm:inline">Export</span> CSV
           </Button>
           <Button size="sm" onClick={onAddExpense} className="gap-1.5">
-            <Plus className="h-3.5 w-3.5" /> Add
+            <Plus className="h-3.5 w-3.5" />
+            Add
           </Button>
         </div>
       </div>
 
+      {/* Filters */}
       <Card className="shadow-sm">
         <CardContent className="p-3 sm:p-4">
           <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-12">
@@ -234,8 +275,6 @@ export default function Transactions({ expenses, categories, paymentMethods, onE
         </CardContent>
       </Card>
 
-      <p className="text-sm text-muted-foreground">{filtered.length} transactions</p>
-
       {/* Mobile: Cards, Desktop: Table */}
       {isMobile ? (
         <div className="space-y-3">
@@ -279,7 +318,7 @@ export default function Transactions({ expenses, categories, paymentMethods, onE
                     <Pencil className="h-3.5 w-3.5" />
                     Edit
                   </Button>
-                  <Button variant="ghost" size="sm" className="h-8 gap-1.5 px-3 text-destructive" onClick={() => onDelete(e.id)}>
+                  <Button variant="ghost" size="sm" className="h-8 gap-1.5 px-3 text-destructive" onClick={() => handleDeleteClick(e)}>
                     <Trash2 className="h-3.5 w-3.5" />
                     Delete
                   </Button>
@@ -322,8 +361,12 @@ export default function Transactions({ expenses, categories, paymentMethods, onE
                   <TableCell className="text-right font-semibold">{fmt(e.amount)}</TableCell>
                   <TableCell>
                     <div className="flex gap-1">
-                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onEdit(e)}><Pencil className="h-3.5 w-3.5" /></Button>
-                      <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => onDelete(e.id)}><Trash2 className="h-3.5 w-3.5" /></Button>
+                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onEdit(e)}>
+                        <Pencil className="h-3.5 w-3.5" />
+                      </Button>
+                      <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => handleDeleteClick(e)}>
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
                     </div>
                   </TableCell>
                 </TableRow>
@@ -332,6 +375,39 @@ export default function Transactions({ expenses, categories, paymentMethods, onE
           </Table>
         </Card>
       )}
+
+      {/* Delete confirmation dialog */}
+      <AlertDialog open={!!deleteTarget} onOpenChange={open => { if (!open) setDeleteTarget(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-destructive" />
+              Delete transaction?
+            </AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-1">
+                <p>
+                  {deleteTarget?.merchant
+                    ? <><span className="font-medium text-foreground">{deleteTarget.merchant}</span> — {fmt(deleteTarget?.amount ?? 0)}</>
+                    : <span className="font-medium text-foreground">{fmt(deleteTarget?.amount ?? 0)}</span>
+                  }
+                  {deleteTarget?.date ? ` on ${formatStoredDate(deleteTarget.date, 'dd MMM yyyy')}` : ''}
+                </p>
+                <p className="text-destructive/80 text-xs font-medium">This action cannot be undone.</p>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteConfirm}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
